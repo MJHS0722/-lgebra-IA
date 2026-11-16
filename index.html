@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clasificación de Imágenes en Espacios Vectoriales - IA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg-deep: #040F30;
+      --bg-royal: #071A52;
+      --bg-bright: #0D2B7A;
+      --cyan-neon: #5CE1E6;
+      --cyan-btn: #00D2FF;
+      --amber-dog: #FDE047;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', sans-serif;
+      background-color: #071A52 !important;
+      background-image: linear-gradient(135deg, #040F30 0%, #071A52 50%, #0D2B7A 100%) !important;
+      color: #FFFFFF !important;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Retícula tecnológica sutil estilo Canva */
+    .tech-grid {
+      background-image: 
+        linear-gradient(rgba(92, 225, 230, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(92, 225, 230, 0.06) 1px, transparent 1px),
+        linear-gradient(135deg, #040F30 0%, #071A52 50%, #0D2B7A 100%) !important;
+      background-size: 42px 42px, 42px 42px, 100% 100% !important;
+    }
+
+    .font-oswald {
+      font-family: 'Oswald', sans-serif;
+    }
+
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .title-shadow {
+      text-shadow: 0 3px 12px rgba(0, 0, 0, 0.65);
+    }
+
+    /* Tarjeta de lectura garantizada (contraste > 14:1) */
+    .content-card {
+      background: rgba(4, 15, 48, 0.86);
+      border: 1px solid rgba(92, 225, 230, 0.35);
+      border-radius: 20px;
+      padding: 1.5rem 1.75rem;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    /* Transiciones de diapositivas */
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 3.8rem 2.5rem 4.8rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(40px) scale(0.98);
+      transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0) scale(1);
+    }
+
+    .slide.prev {
+      transform: translateX(-40px) scale(0.98);
+    }
+
+    /* Botones interactivos de alto contraste */
+    .btn-action {
+      background: linear-gradient(135deg, #00D2FF 0%, #38BDF8 100%);
+      color: #041036 !important;
+      font-weight: 800;
+      border-radius: 12px;
+      padding: 0.7rem 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      box-shadow: 0 6px 20px rgba(0, 210, 255, 0.4);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: 2px solid #FFFFFF;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 26px rgba(0, 210, 255, 0.65);
+      filter: brightness(1.06);
+    }
+
+    .btn-action:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: #081C54;
+      color: #FFFFFF !important;
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 0.7rem 1.15rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1.5px solid #38BDF8;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      background: #0F2E85;
+      border-color: #FFFFFF;
+    }
+
+    .btn-secondary.selected {
+      background: #00D2FF;
+      border-color: #FFFFFF;
+      color: #041036 !important;
+    }
+
+    /* Panel derecho contenedor de animaciones */
+    .glass-panel {
+      background: rgba(4, 14, 44, 0.92);
+      border: 2px solid rgba(56, 189, 248, 0.45);
+      border-radius: 22px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+    }
+
+    /* Animación de pulso para flujo */
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(0, 210, 255, 0.5); }
+      50% { box-shadow: 0 0 32px rgba(0, 210, 255, 1); }
+    }
+
+    .step-active {
+      animation: pulseGlow 1.5s infinite;
+      border-color: #00D2FF !important;
+      background: #0D2B7A !important;
+      transform: scale(1.04);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+      .slide {
+        padding: 3.6rem 1.25rem 4.8rem 1.25rem;
+        overflow-y: auto;
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body class="tech-grid">
+
+  <!-- Barra superior sutil de estado -->
+  <header class="fixed top-0 left-0 right-0 z-30 px-6 md:px-12 py-3 bg-[#040F30]/90 border-b border-[#38BDF8]/30 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <span class="w-2.5 h-2.5 rounded-full bg-[#00D2FF] animate-ping"></span>
+      <span class="font-oswald tracking-wider text-xs md:text-sm uppercase text-[#5CE1E6] font-bold">
+        ÁLGEBRA LINEAL II • ESPACIOS VECTORIALES EN IA
+      </span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="topSlideIndicator" class="font-mono-code text-xs font-bold text-white bg-[#081C54] border border-[#38BDF8]/50 px-3 py-1 rounded-lg">
+        Diapositiva 1 / 4
+      </span>
+      <button id="btnFullscreen" title="Pantalla Completa (F)" class="text-xs font-bold bg-[#081C54] hover:bg-[#0F2E85] border border-[#38BDF8] text-white px-3 py-1.5 rounded-lg flex items-center gap-2 transition cursor-pointer">
+        <i class="fa-solid fa-expand text-[#5CE1E6]"></i>
+        <span class="hidden sm:inline">Pantalla Completa</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- DIAPOSITIVA 1: DE PÍXELES A VECTORES EN R^n                           -->
+  <!-- ===================================================================== -->
+  <section class="slide active" id="slide-0">
+    <div class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-7 items-center my-auto">
+      
+      <!-- Izquierda: Contenido Teórico (45% -> 5.5 cols -> 6 cols) -->
+      <div class="lg:col-span-6 content-card flex flex-col justify-center">
+        <span class="font-oswald text-[#5CE1E6] tracking-widest text-sm md:text-base font-bold uppercase mb-1">
+          FASE 1 • REPRESENTACIÓN MATRICIAL DE IMÁGENES DIGITALES
+        </span>
+        <h1 class="font-oswald text-4xl sm:text-5xl font-bold uppercase leading-tight text-white title-shadow mb-3">
+          DE PÍXELES A VECTORES EN <span class="text-[#5CE1E6]">ℝⁿ</span>
+        </h1>
+        <p class="font-oswald text-base md:text-lg text-[#5CE1E6] font-bold uppercase tracking-wide mb-4 leading-snug">
+          PARA UNA IA, UNA FOTO ES UN PUNTO GEOMÉTRICO EN UN ESPACIO DE ALTA DIMENSIÓN.
+        </p>
+
+        <ul class="space-y-3 text-sm md:text-base text-white font-medium mb-6">
+          <li class="flex items-start gap-3">
+            <i class="fa-solid fa-table-cells text-[#5CE1E6] mt-1"></i>
+            <span><strong class="text-white font-bold">Matriz de Píxeles:</strong> Cuadrícula de intensidades numéricas entre <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1.5 py-0.5 rounded">0.0</code> y <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1.5 py-0.5 rounded">1.0</code>.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <i class="fa-solid fa-arrows-down-to-line text-[#5CE1E6] mt-1"></i>
+            <span><strong class="text-white font-bold">Aplanamiento (Flattening):</strong> La matriz <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1.5 py-0.5 rounded">A ∈ ℝᵐˣᵐ</code> se apila en un vector columna <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1.5 py-0.5 rounded">x ∈ ℝⁿ</code>.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <i class="fa-solid fa-location-dot text-[#5CE1E6] mt-1"></i>
+            <span><strong class="text-white font-bold">Alta Dimensión:</strong> Una foto RGB de <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1.5 py-0.5 rounded">100×100</code> vive en <strong class="text-[#5CE1E6]">ℝ³⁰·⁰⁰⁰</strong>.</span>
+          </li>
+        </ul>
+
+        <!-- Controles Interactivos Diapositiva 1 -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button id="btnFlattenToggle" class="btn-action text-xs md:text-sm">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span id="btnFlattenText">Aplanar Matriz → Vector x ∈ ℝ¹⁶</span>
+          </button>
+          <button id="btnSelectCat" class="btn-secondary selected text-xs md:text-sm">
+            <i class="fa-solid fa-cat"></i> Patrón Gato
+          </button>
+          <button id="btnSelectDog" class="btn-secondary text-xs md:text-sm">
+            <i class="fa-solid fa-dog"></i> Patrón Perro
+          </button>
+        </div>
+      </div>
+
+      <!-- Derecha: Canvas Interactivo Matriz -> Vector (6 cols) -->
+      <div class="lg:col-span-6 glass-panel p-5 flex flex-col items-center justify-center relative">
+        <div class="w-full flex items-center justify-between mb-2 px-1">
+          <span id="s1BadgeMode" class="text-xs font-mono-code font-bold uppercase px-3 py-1 rounded bg-[#081C54] text-[#5CE1E6] border border-[#38BDF8]">
+            Estado: Matriz 2D (4×4)
+          </span>
+          <span id="s1DimLabel" class="text-xs font-mono-code font-bold text-white bg-[#081C54] px-2.5 py-1 rounded">
+            ℝ⁴ˣ⁴ ≅ ℝ¹⁶
+          </span>
+        </div>
+        <canvas id="canvasSlide1" class="w-full h-[330px] md:h-[365px] rounded-xl bg-[#05133D] border border-[#38BDF8]/30"></canvas>
+        <p class="text-xs md:text-sm text-white font-medium mt-2.5 text-center">
+          Pulsa <strong class="text-[#5CE1E6]">"Aplanar Matriz → Vector x ∈ ℝ¹⁶"</strong> para observar la transformación lineal en vivo.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- DIAPOSITIVA 2: TRANSFORMACIONES LINEALES Y SUBESPACIOS                -->
+  <!-- ===================================================================== -->
+  <section class="slide" id="slide-1">
+    <div class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-7 items-center my-auto">
+      
+      <!-- Izquierda: Teoría -->
+      <div class="lg:col-span-6 content-card flex flex-col justify-center">
+        <span class="font-oswald text-[#5CE1E6] tracking-widest text-sm md:text-base font-bold uppercase mb-1">
+          FASE 2 • EXTRACCIÓN DE CARACTERÍSTICAS MEDIANTE T(x) = Wx
+        </span>
+        <h2 class="font-oswald text-4xl sm:text-5xl font-bold uppercase leading-tight text-white title-shadow mb-3">
+          TRANSFORMACIONES LINEALES Y <span class="text-[#5CE1E6]">SUBESPACIOS</span>
+        </h2>
+        <p class="font-oswald text-base md:text-lg text-[#5CE1E6] font-bold uppercase tracking-wide mb-4 leading-snug">
+          FILTRAMOS EL RUIDO DEL FONDO Y PROYECTAMOS SOLO LOS RASGOS CLAVE DEL ANIMAL.
+        </p>
+
+        <ul class="space-y-3 text-sm md:text-base text-white font-medium mb-6">
+          <li class="flex items-start gap-3">
+            <i class="fa-solid fa-cloud text-[#5CE1E6] mt-1"></i>
+            <span><strong class="text-white font-bold">Ruido en ℝⁿ:</strong> El fondo y la luz mezclan inicialmente los vectores de gatos y perros.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <i class="fa-solid fa-xmark text-[#5CE1E6] mt-1"></i>
+            <span><strong class="text-white font-bold">Matriz de Pesos W ∈ ℝᵏˣⁿ:</strong> Combina linealmente píxeles para detectar bordes (orejas vs. hocico).</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <i class="fa-solid fa-layer-group text-[#5CE1E6] mt-1"></i>
+            <span><strong class="text-white font-bold">Subespacio ℝᵏ (k ≪ n):</strong> Los vectores proyectados <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1.5 py-0.5 rounded">z = Wx</code> se agrupan en clústeres limpios.</span>
+          </li>
+        </ul>
+
+        <!-- Controles Interactivos Diapositiva 2 -->
+        <div class="flex flex-wrap items-center gap-3">
+          <button id="btnTransformToggle" class="btn-action text-xs md:text-sm">
+            <i class="fa-solid fa-diagram-project"></i>
+            <span id="btnTransformText">Aplicar Transformación T(x) = Wx</span>
+          </button>
+          <button id="btnShufflePoints" class="btn-secondary text-xs md:text-sm">
+            <i class="fa-solid fa-shuffle"></i> Reiniciar Dispersión
+          </button>
+        </div>
+      </div>
+
+      <!-- Derecha: Canvas Proyección de Nube Ruidosa a Subespacio -->
+      <div class="lg:col-span-6 glass-panel p-5 flex flex-col items-center justify-center">
+        <div class="w-full flex items-center justify-between mb-2 px-1">
+          <span id="s2StatusBadge" class="text-xs font-mono-code font-bold uppercase px-3 py-1 rounded bg-[#081C54] text-[#FDE047] border border-[#FDE047]">
+            Espacio Original ℝⁿ (Datos Mezclados)
+          </span>
+          <span class="text-xs font-mono-code font-bold text-[#5CE1E6] bg-[#081C54] px-2.5 py-1 rounded">z = W · x</span>
+        </div>
+        <canvas id="canvasSlide2" class="w-full h-[330px] md:h-[365px] rounded-xl bg-[#05133D] border border-[#38BDF8]/30"></canvas>
+        <div class="flex items-center justify-center gap-6 mt-2.5 text-xs md:text-sm font-bold text-white">
+          <span class="flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full bg-[#38BDF8] inline-block border border-white"></span> Vectores Gato
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full bg-[#FDE047] inline-block border border-white"></span> Vectores Perro
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- DIAPOSITIVA 3: PRODUCTO INTERNO E HIPERPLANOS DE DECISIÓN             -->
+  <!-- ===================================================================== -->
+  <section class="slide" id="slide-2">
+    <div class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-7 items-center my-auto">
+      
+      <!-- Izquierda: Teoría + Resultados Matemáticos en Vivo -->
+      <div class="lg:col-span-6 content-card flex flex-col justify-center">
+        <span class="font-oswald text-[#5CE1E6] tracking-widest text-sm md:text-base font-bold uppercase mb-1">
+          FASE 3 • SIMILITUD ANGULAR Y FRONTERA DE DECISIÓN
+        </span>
+        <h2 class="font-oswald text-4xl sm:text-5xl font-bold uppercase leading-tight text-white title-shadow mb-2">
+          PRODUCTO INTERNO E <span class="text-[#5CE1E6]">HIPERPLANOS</span>
+        </h2>
+        <p class="font-oswald text-base md:text-lg text-[#5CE1E6] font-bold uppercase tracking-wide mb-3 leading-snug">
+          EL HIPERPLANO <span class="text-white">w · x + b = 0</span> DIVIDE EL ESPACIO EN DOS SEMIESPACIOS.
+        </p>
+
+        <ul class="space-y-2 text-sm text-white font-medium mb-4">
+          <li class="flex items-start gap-2.5">
+            <i class="fa-solid fa-compass-drafting text-[#5CE1E6] mt-1"></i>
+            <span><strong class="font-bold">Producto Punto:</strong> <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1.5 py-0.5 rounded">w · x = ‖w‖‖x‖ cos(θ)</code> mide alineación con la normal <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1.5 py-0.5 rounded">w</code>.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <i class="fa-solid fa-plus-minus text-[#5CE1E6] mt-1"></i>
+            <span>Si <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1.5 py-0.5 rounded">w · x + b &gt; 0</code> → <strong class="text-[#5CE1E6]">GATO</strong> | Si <code class="font-mono-code bg-[#081C54] text-[#FDE047] px-1.5 py-0.5 rounded">w · x + b &lt; 0</code> → <strong class="text-[#FDE047]">PERRO</strong>.</span>
+          </li>
+        </ul>
+
+        <!-- Panel Telemetría Matemática en Tiempo Real -->
+        <div class="bg-[#081C54] border-2 border-[#38BDF8] rounded-xl p-3.5 mb-4 font-mono-code text-xs md:text-sm text-white">
+          <div class="flex justify-between items-center border-b border-white/20 pb-2 mb-2">
+            <span class="text-white font-semibold">Vector Evaluado <strong>x</strong>:</span>
+            <span id="telemetryVec" class="text-[#5CE1E6] font-bold">[-1.40, 1.80]</span>
+          </div>
+          <div class="flex justify-between items-center border-b border-white/20 pb-2 mb-2">
+            <span class="text-white font-semibold">Ángulo θ con normal <strong>w</strong>:</span>
+            <span id="telemetryAngle" class="text-white font-bold">24.5° (cos θ = 0.91)</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-white font-semibold">Evaluación <strong>w · x + b</strong>:</span>
+            <span id="telemetryResult" class="px-3 py-1 rounded font-extrabold bg-[#00D2FF] text-[#041036]">+3.20 → GATO (&gt; 0)</span>
+          </div>
+        </div>
+
+        <!-- Botones de prueba rápida -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button id="btnTestCat" class="btn-secondary text-xs md:text-sm">
+            <i class="fa-solid fa-cat text-[#5CE1E6]"></i> Probar Vector Gato
+          </button>
+          <button id="btnTestDog" class="btn-secondary text-xs md:text-sm">
+            <i class="fa-solid fa-dog text-[#FDE047]"></i> Probar Vector Perro
+          </button>
+          <button id="btnTestBorder" class="btn-secondary text-xs md:text-sm">
+            <i class="fa-solid fa-border-none text-white"></i> Caso Frontera
+          </button>
+        </div>
+      </div>
+
+      <!-- Derecha: Plano Interactivo con Hiperplano -->
+      <div class="lg:col-span-6 glass-panel p-4 flex flex-col items-center justify-center">
+        <div class="w-full flex items-center justify-between mb-2 px-1">
+          <span class="text-xs font-mono-code font-bold text-white bg-[#081C54] px-2.5 py-1 rounded border border-[#38BDF8]/40">
+            <i class="fa-solid fa-hand-pointer text-[#5CE1E6] mr-1"></i> Haz clic en el gráfico para mover x
+          </span>
+          <span class="text-xs font-mono-code font-bold text-[#5CE1E6] bg-[#081C54] px-2.5 py-1 rounded">w · x + b = 0</span>
+        </div>
+        <canvas id="canvasSlide3" class="w-full h-[335px] md:h-[370px] rounded-xl bg-[#05133D] border border-[#38BDF8]/30 cursor-crosshair"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- DIAPOSITIVA 4: ARQUITECTURA COMPLETA Y PUENTE AL CÓDIGO               -->
+  <!-- ===================================================================== -->
+  <section class="slide" id="slide-3">
+    <div class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-7 items-center my-auto">
+      
+      <!-- Izquierda: Síntesis Teórica (45% -> 5 cols) -->
+      <div class="lg:col-span-5 content-card flex flex-col justify-center">
+        <span class="font-oswald text-[#5CE1E6] tracking-widest text-sm font-bold uppercase mb-1">
+          FASE 4 • FLUJO MATEMÁTICO DE CLASIFICACIÓN
+        </span>
+        <h2 class="font-oswald text-4xl sm:text-5xl font-bold uppercase leading-tight text-white title-shadow mb-3">
+          DEL ÁLGEBRA LINEAL AL <span class="text-[#5CE1E6]">CÓDIGO EN IA</span>
+        </h2>
+        <p class="text-sm md:text-base text-white font-medium mb-4 leading-relaxed">
+          Todo modelo de Visión Artificial traduce la geometría de espacios vectoriales en operaciones matriciales rápidas:
+        </p>
+
+        <ol class="space-y-2.5 text-sm text-white font-medium mb-5">
+          <li><strong class="text-[#5CE1E6]">1. Vectorización:</strong> Aplanar píxeles en <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1 rounded">x ∈ ℝⁿ</code>.</li>
+          <li><strong class="text-[#5CE1E6]">2. Proyección Lineal:</strong> Extraer rasgos con <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1 rounded">z = Wx</code>.</li>
+          <li><strong class="text-[#5CE1E6]">3. Hiperplano:</strong> Evaluar signo de <code class="font-mono-code bg-[#081C54] text-[#5CE1E6] px-1 rounded">w·z + b</code>.</li>
+          <li><strong class="text-[#5CE1E6]">4. Decisión:</strong> Asignar clase Gato o Perro.</li>
+        </ol>
+
+        <div class="bg-[#081C54] border-l-4 border-[#00D2FF] p-3 rounded-r-xl">
+          <p class="font-oswald text-sm uppercase text-[#5CE1E6] font-bold">
+            SIGUIENTE SECCIÓN: IMPLEMENTACIÓN EN CÓDIGO →
+          </p>
+          <p class="text-xs text-white mt-0.5">
+            Cómo programar estas matrices en Python y entrenar los pesos <code class="font-mono-code text-[#5CE1E6]">W</code> y <code class="font-mono-code text-[#5CE1E6]">b</code>.
+          </p>
+        </div>
+      </div>
+
+      <!-- Derecha: Diagrama de Flujo Interactivo (55% -> 7 cols) -->
+      <div class="lg:col-span-7 glass-panel p-5 flex flex-col justify-between">
+        
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-white/15">
+          <span class="font-oswald text-base md:text-lg uppercase text-white font-bold tracking-wide">
+            LABORATORIO DE SIMULACIÓN PASO A PASO
+          </span>
+          <div class="flex items-center gap-2">
+            <button id="btnSimInputCat" class="btn-secondary selected text-xs py-1.5 px-3">
+              <i class="fa-solid fa-cat"></i> Entrada: Gato
+            </button>
+            <button id="btnSimInputDog" class="btn-secondary text-xs py-1.5 px-3">
+              <i class="fa-solid fa-dog"></i> Entrada: Perro
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Nodos conectados -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-4" id="pipelineCards">
+          
+          <!-- Paso 1 -->
+          <div id="pipe-step-0" class="bg-[#081C54] border-2 border-[#38BDF8]/40 rounded-xl p-4 transition-all duration-300">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-mono-code font-bold text-[#5CE1E6] uppercase">1. Imagen → Vector x</span>
+              <i class="fa-solid fa-image text-[#5CE1E6]"></i>
+            </div>
+            <p class="text-xs text-white font-medium mb-2">Aplanamiento de matriz RGB a ℝⁿ.</p>
+            <div id="pipeCalc0" class="font-mono-code text-xs font-bold bg-[#040F30] text-white border border-white/20 px-2.5 py-1.5 rounded">
+              x = [0.9, 0.1, ..., 0.8]ᵀ
+            </div>
+          </div>
+
+          <!-- Paso 2 -->
+          <div id="pipe-step-1" class="bg-[#081C54] border-2 border-[#38BDF8]/40 rounded-xl p-4 transition-all duration-300">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-mono-code font-bold text-[#5CE1E6] uppercase">2. Proyección z = Wx</span>
+              <i class="fa-solid fa-table-cells-large text-[#5CE1E6]"></i>
+            </div>
+            <p class="text-xs text-white font-medium mb-2">Transformación al subespacio de rasgos.</p>
+            <div id="pipeCalc1" class="font-mono-code text-xs font-bold bg-[#040F30] text-white border border-white/20 px-2.5 py-1.5 rounded">
+              z = np.dot(W, x)
+            </div>
+          </div>
+
+          <!-- Paso 3 -->
+          <div id="pipe-step-2" class="bg-[#081C54] border-2 border-[#38BDF8]/40 rounded-xl p-4 transition-all duration-300">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-mono-code font-bold text-[#5CE1E6] uppercase">3. Hiperplano w·z + b</span>
+              <i class="fa-solid fa-border-none text-[#5CE1E6]"></i>
+            </div>
+            <p class="text-xs text-white font-medium mb-2">Producto punto con vector normal w.</p>
+            <div id="pipeCalc2" class="font-mono-code text-xs font-bold bg-[#040F30] text-white border border-white/20 px-2.5 py-1.5 rounded">
+              score = w @ z + b
+            </div>
+          </div>
+
+          <!-- Paso 4 -->
+          <div id="pipe-step-3" class="bg-[#081C54] border-2 border-[#38BDF8]/40 rounded-xl p-4 transition-all duration-300">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-mono-code font-bold text-[#5CE1E6] uppercase">4. Clasificación Final</span>
+              <i class="fa-solid fa-check-double text-[#5CE1E6]"></i>
+            </div>
+            <p class="text-xs text-white font-medium mb-2">Veredicto según signo del semiespacio.</p>
+            <div id="pipeOutputBadge" class="font-mono-code text-xs font-extrabold bg-[#040F30] text-[#5CE1E6] border border-[#38BDF8]/50 px-2.5 py-1.5 rounded">
+              Listo para simular
+            </div>
+          </div>
+
+        </div>
+
+        <button id="btnRunSimulation" class="btn-action w-full justify-center text-sm md:text-base">
+          <i class="fa-solid fa-play"></i> Ejecutar Simulación Paso a Paso
+        </button>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- CONTROLES DE NAVEGACIÓN INFERIORES                                    -->
+  <!-- ===================================================================== -->
+  <footer class="fixed bottom-0 left-0 right-0 z-30 px-6 md:px-12 py-3 bg-[#040F30]/95 border-t border-[#38BDF8]/35 flex items-center justify-between">
+    
+    <button id="btnPrev" class="btn-secondary text-xs md:text-sm py-2 px-4 disabled:opacity-40 disabled:pointer-events-none">
+      <i class="fa-solid fa-arrow-left"></i> Anterior
+    </button>
+
+    <!-- Indicadores de diapositiva -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2" id="slideDots">
+        <button data-slide="0" class="w-8 h-2.5 rounded-full bg-[#00D2FF] transition-all cursor-pointer"></button>
+        <button data-slide="1" class="w-2.5 h-2.5 rounded-full bg-white/40 hover:bg-white transition-all cursor-pointer"></button>
+        <button data-slide="2" class="w-2.5 h-2.5 rounded-full bg-white/40 hover:bg-white transition-all cursor-pointer"></button>
+        <button data-slide="3" class="w-2.5 h-2.5 rounded-full bg-white/40 hover:bg-white transition-all cursor-pointer"></button>
+      </div>
+      <span id="slideCounter" class="font-mono-code text-xs md:text-sm text-white font-bold ml-2">
+        1 / 4
+      </span>
+    </div>
+
+    <button id="btnNext" class="btn-action text-xs md:text-sm py-2 px-4">
+      Siguiente <i class="fa-solid fa-arrow-right"></i>
+    </button>
+
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- LÓGICA INTERACTIVA Y ANIMACIONES EN CANVAS                            -->
+  <!-- ===================================================================== -->
+  <script>
+    // =========================================================================
+    // 1. NAVEGACIÓN ENTRE DIAPOSITIVAS
+    // =========================================================================
+    let currentSlide = 0;
+    const totalSlides = 4;
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('#slideDots button');
+    const slideCounter = document.getElementById('slideCounter');
+    const topSlideIndicator = document.getElementById('topSlideIndicator');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function goToSlide(index) {
+      if (index < 0 || index >= totalSlides) return;
+      currentSlide = index;
+
+      slides.forEach((s, i) => {
+        s.classList.remove('active', 'prev');
+        if (i === currentSlide) {
+          s.classList.add('active');
+        } else if (i < currentSlide) {
+          s.classList.add('prev');
+        }
+      });
+
+      dots.forEach((dot, i) => {
+        if (i === currentSlide) {
+          dot.className = 'w-8 h-2.5 rounded-full bg-[#00D2FF] transition-all cursor-pointer';
+        } else {
+          dot.className = 'w-2.5 h-2.5 rounded-full bg-white/40 hover:bg-white transition-all cursor-pointer';
+        }
+      });
+
+      slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+      topSlideIndicator.textContent = `Diapositiva ${currentSlide + 1} / ${totalSlides}`;
+      btnPrev.disabled = currentSlide === 0;
+      btnNext.innerHTML = currentSlide === totalSlides - 1
+        ? 'Reiniciar <i class="fa-solid fa-rotate-right"></i>'
+        : 'Siguiente <i class="fa-solid fa-arrow-right"></i>';
+
+      resizeAllCanvases();
+    }
+
+    btnPrev.addEventListener('click', () => goToSlide(currentSlide - 1));
+    btnNext.addEventListener('click', () => {
+      if (currentSlide === totalSlides - 1) goToSlide(0);
+      else goToSlide(currentSlide + 1);
+    });
+
+    dots.forEach(dot => {
+      dot.addEventListener('click', () => goToSlide(parseInt(dot.dataset.slide)));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        if (currentSlide < totalSlides - 1) goToSlide(currentSlide + 1);
+      } else if (e.key === 'ArrowLeft') {
+        if (currentSlide > 0) goToSlide(currentSlide - 1);
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleFullscreen();
+      }
+    });
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+    document.getElementById('btnFullscreen').addEventListener('click', toggleFullscreen);
+
+    // =========================================================================
+    // 2. DIAPOSITIVA 1: ANIMACIÓN MATRIZ -> VECTOR COLUMNA EN R^n
+    // =========================================================================
+    const canvas1 = document.getElementById('canvasSlide1');
+    const ctx1 = canvas1.getContext('2d');
+
+    const catMatrix = [
+      [0.9, 0.1, 0.1, 0.9],
+      [0.8, 0.7, 0.7, 0.8],
+      [0.6, 0.9, 0.9, 0.6],
+      [0.2, 0.8, 0.8, 0.2]
+    ];
+    const dogMatrix = [
+      [0.3, 0.8, 0.8, 0.3],
+      [0.7, 0.9, 0.9, 0.7],
+      [0.9, 0.9, 0.9, 0.9],
+      [0.4, 0.7, 0.7, 0.4]
+    ];
+
+    let activeMatrix = catMatrix;
+    let isFlattened = false;
+    let flattenProgress = 0;
+
+    document.getElementById('btnFlattenToggle').addEventListener('click', () => {
+      isFlattened = !isFlattened;
+      document.getElementById('btnFlattenText').textContent = isFlattened
+        ? 'Restaurar Matriz 2D'
+        : 'Aplanar Matriz → Vector x ∈ ℝ¹⁶';
+      document.getElementById('s1BadgeMode').textContent = isFlattened
+        ? 'Estado: Vector Columna x ∈ ℝ¹⁶'
+        : 'Estado: Matriz 2D (4×4)';
+    });
+
+    document.getElementById('btnSelectCat').addEventListener('click', (e) => {
+      activeMatrix = catMatrix;
+      e.currentTarget.classList.add('selected');
+      document.getElementById('btnSelectDog').classList.remove('selected');
+    });
+
+    document.getElementById('btnSelectDog').addEventListener('click', (e) => {
+      activeMatrix = dogMatrix;
+      e.currentTarget.classList.add('selected');
+      document.getElementById('btnSelectCat').classList.remove('selected');
+    });
+
+    function drawSlide1() {
+      const w = canvas1.width;
+      const h = canvas1.height;
+      ctx1.clearRect(0, 0, w, h);
+
+      const target = isFlattened ? 1 : 0;
+      flattenProgress += (target - flattenProgress) * 0.08;
+
+      const rows = 4;
+      const cols = 4;
+      const total = rows * cols;
+
+      const matCellSize = Math.min(w * 0.12, h * 0.14, 48);
+      const matGap = 6;
+      const matTotalW = cols * matCellSize + (cols - 1) * matGap;
+      const matTotalH = rows * matCellSize + (rows - 1) * matGap;
+      const matStartX = w * 0.27 - matTotalW / 2;
+      const matStartY = h * 0.53 - matTotalH / 2;
+
+      const vecCellH = Math.min((h - 62) / total, 20);
+      const vecCellW = 58;
+      const vecStartX = w * 0.77 - vecCellW / 2;
+      const vecStartY = h * 0.53 - (total * vecCellH) / 2;
+
+      // Etiquetas superiores de altísimo contraste
+      ctx1.font = '700 14px Montserrat, sans-serif';
+      ctx1.textAlign = 'center';
+      ctx1.fillStyle = '#FFFFFF';
+      ctx1.fillText('MATRIZ A (4×4)', w * 0.27, 26);
+
+      ctx1.fillStyle = '#5CE1E6';
+      ctx1.fillText('VECTOR x ∈ ℝ¹⁶', w * 0.77, 26);
+
+      // Flecha central indicadora
+      ctx1.save();
+      ctx1.strokeStyle = '#5CE1E6';
+      ctx1.lineWidth = 2.5;
+      ctx1.setLineDash([5, 5]);
+      ctx1.beginPath();
+      ctx1.moveTo(w * 0.46, h * 0.53);
+      ctx1.lineTo(w * 0.62, h * 0.53);
+      ctx1.stroke();
+      ctx1.restore();
+
+      ctx1.fillStyle = '#FFFFFF';
+      ctx1.font = '700 13px JetBrains Mono, monospace';
+      ctx1.fillText('vec(A)', w * 0.54, h * 0.53 - 12);
+
+      // Corchetes blancos nítidos del vector destino
+      if (flattenProgress > 0.15) {
+        ctx1.strokeStyle = '#FFFFFF';
+        ctx1.lineWidth = 3;
+        const bx1 = vecStartX - 8;
+        const bx2 = vecStartX + vecCellW + 8;
+        const by1 = vecStartY - 4;
+        const by2 = vecStartY + total * vecCellH + 4;
+        ctx1.beginPath();
+        ctx1.moveTo(bx1 + 8, by1);
+        ctx1.lineTo(bx1, by1);
+        ctx1.lineTo(bx1, by2);
+        ctx1.lineTo(bx1 + 8, by2);
+        ctx1.stroke();
+
+        ctx1.beginPath();
+        ctx1.moveTo(bx2 - 8, by1);
+        ctx1.lineTo(bx2, by1);
+        ctx1.lineTo(bx2, by2);
+        ctx1.lineTo(bx2 - 8, by2);
+        ctx1.stroke();
+      }
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const idx = r * cols + c;
+          const val = activeMatrix[r][c];
+
+          const x0 = matStartX + c * (matCellSize + matGap);
+          const y0 = matStartY + r * (matCellSize + matGap);
+
+          const x1 = vecStartX;
+          const y1 = vecStartY + idx * vecCellH;
+
+          const delay = idx * 0.015;
+          const t = Math.max(0, Math.min(1, (flattenProgress * 1.25) - delay));
+          const ease = t * t * (3 - 2 * t);
+
+          const curX = x0 + (x1 - x0) * ease;
+          const curY = y0 + (y1 - y0) * ease;
+          const curW = matCellSize + (vecCellW - matCellSize) * ease;
+          const curH = matCellSize + ((vecCellH - 2) - matCellSize) * ease;
+
+          // Alto contraste: celdas claras con texto oscuro vs celdas oscuras con texto blanco
+          const isHighVal = val > 0.65;
+          ctx1.fillStyle = isHighVal ? '#5CE1E6' : '#13389E';
+
+          ctx1.beginPath();
+          ctx1.roundRect(curX, curY, curW, curH, 5);
+          ctx1.fill();
+
+          ctx1.strokeStyle = '#FFFFFF';
+          ctx1.lineWidth = 1.2;
+          ctx1.stroke();
+
+          ctx1.fillStyle = isHighVal ? '#040F30' : '#FFFFFF';
+          ctx1.font = `700 ${Math.round(13 - ease * 1.5)}px JetBrains Mono, monospace`;
+          ctx1.textAlign = 'center';
+          ctx1.textBaseline = 'middle';
+          ctx1.fillText(val.toFixed(1), curX + curW / 2, curY + curH / 2);
+        }
+      }
+    }
+
+    // =========================================================================
+    // 3. DIAPOSITIVA 2: TRANSFORMACIÓN LINEAL T(x) = Wx (NUBE -> CLÚSTERES)
+    // =========================================================================
+    const canvas2 = document.getElementById('canvasSlide2');
+    const ctx2 = canvas2.getContext('2d');
+
+    let isTransformed = false;
+    let transformProgress = 0;
+    let samplePoints = [];
+
+    function generateSamplePoints() {
+      samplePoints = [];
+      for (let i = 0; i < 28; i++) {
+        const isCat = i < 14;
+        const rawX = (Math.random() - 0.5) * 0.76;
+        const rawY = (Math.random() - 0.5) * 0.76;
+
+        const projX = isCat
+          ? -0.24 + (Math.random() - 0.5) * 0.20
+          : 0.24 + (Math.random() - 0.5) * 0.20;
+        const projY = isCat
+          ? -0.15 + (Math.random() - 0.5) * 0.22
+          : 0.15 + (Math.random() - 0.5) * 0.22;
+
+        samplePoints.push({ isCat, rawX, rawY, projX, projY });
+      }
+    }
+    generateSamplePoints();
+
+    document.getElementById('btnTransformToggle').addEventListener('click', () => {
+      isTransformed = !isTransformed;
+      document.getElementById('btnTransformText').textContent = isTransformed
+        ? 'Volver al Espacio Original ℝⁿ'
+        : 'Aplicar Transformación T(x) = Wx';
+
+      const badge = document.getElementById('s2StatusBadge');
+      if (isTransformed) {
+        badge.textContent = 'Subespacio ℝᵏ (Clases Separadas)';
+        badge.className = 'text-xs font-mono-code font-bold uppercase px-3 py-1 rounded bg-[#081C54] text-[#5CE1E6] border border-[#5CE1E6]';
+      } else {
+        badge.textContent = 'Espacio Original ℝⁿ (Datos Mezclados)';
+        badge.className = 'text-xs font-mono-code font-bold uppercase px-3 py-1 rounded bg-[#081C54] text-[#FDE047] border border-[#FDE047]';
+      }
+    });
+
+    document.getElementById('btnShufflePoints').addEventListener('click', generateSamplePoints);
+
+    function drawSlide2() {
+      const w = canvas2.width;
+      const h = canvas2.height;
+      ctx2.clearRect(0, 0, w, h);
+
+      const target = isTransformed ? 1 : 0;
+      transformProgress += (target - transformProgress) * 0.07;
+
+      const cx = w / 2;
+      const cy = h / 2;
+
+      // Ejes coordenados blancos de alto contraste
+      ctx2.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx2.lineWidth = 1.8;
+      ctx2.beginPath();
+      ctx2.moveTo(24, cy);
+      ctx2.lineTo(w - 24, cy);
+      ctx2.moveTo(cx, 24);
+      ctx2.lineTo(cx, h - 24);
+      ctx2.stroke();
+
+      // Etiquetas de ejes blancas y nítidas
+      ctx2.fillStyle = '#FFFFFF';
+      ctx2.font = '700 13px JetBrains Mono, monospace';
+      ctx2.textAlign = 'right';
+      ctx2.fillText(transformProgress > 0.5 ? 'Rasgo z₁ (Orejas)' : 'Píxel x₁', w - 24, cy - 10);
+      ctx2.textAlign = 'left';
+      ctx2.fillText(transformProgress > 0.5 ? 'Rasgo z₂ (Hocico)' : 'Píxel x₂', cx + 10, 32);
+
+      // Regiones de clúster proyectadas
+      if (transformProgress > 0.25) {
+        const alpha = (transformProgress - 0.25) * 0.28;
+        ctx2.fillStyle = `rgba(92, 225, 230, ${alpha})`;
+        ctx2.beginPath();
+        ctx2.arc(cx - w * 0.24, cy - h * 0.15, Math.min(w, h) * 0.22, 0, Math.PI * 2);
+        ctx2.fill();
+
+        ctx2.fillStyle = `rgba(253, 224, 71, ${alpha})`;
+        ctx2.beginPath();
+        ctx2.arc(cx + w * 0.24, cy + h * 0.15, Math.min(w, h) * 0.22, 0, Math.PI * 2);
+        ctx2.fill();
+
+        ctx2.font = '700 14px Oswald, sans-serif';
+        ctx2.textAlign = 'center';
+        ctx2.fillStyle = '#5CE1E6';
+        ctx2.fillText('CLÚSTER GATOS', cx - w * 0.24, cy - h * 0.15 - Math.min(w, h) * 0.24);
+        ctx2.fillStyle = '#FDE047';
+        ctx2.fillText('CLÚSTER PERROS', cx + w * 0.24, cy + h * 0.15 + Math.min(w, h) * 0.28);
+      }
+
+      const time = Date.now() * 0.002;
+      samplePoints.forEach((pt, idx) => {
+        const nx = pt.rawX + (pt.projX - pt.rawX) * transformProgress;
+        const ny = pt.rawY + (pt.projY - pt.rawY) * transformProgress;
+
+        const px = cx + nx * w + Math.sin(time + idx) * 2;
+        const py = cy + ny * h + Math.cos(time + idx) * 2;
+
+        if (transformProgress > 0.05 && transformProgress < 0.95) {
+          const startX = cx + pt.rawX * w;
+          const startY = cy + pt.rawY * h;
+          ctx2.strokeStyle = pt.isCat ? 'rgba(92, 225, 230, 0.35)' : 'rgba(253, 224, 71, 0.35)';
+          ctx2.lineWidth = 1.2;
+          ctx2.beginPath();
+          ctx2.moveTo(startX, startY);
+          ctx2.lineTo(px, py);
+          ctx2.stroke();
+        }
+
+        ctx2.fillStyle = pt.isCat ? '#38BDF8' : '#FDE047';
+        ctx2.beginPath();
+        ctx2.arc(px, py, 7, 0, Math.PI * 2);
+        ctx2.fill();
+
+        ctx2.strokeStyle = '#FFFFFF';
+        ctx2.lineWidth = 1.5;
+        ctx2.stroke();
+      });
+    }
+
+    // =========================================================================
+    // 4. DIAPOSITIVA 3: PRODUCTO INTERNO E HIPERPLANO INTERACTIVO
+    // =========================================================================
+    const canvas3 = document.getElementById('canvasSlide3');
+    const ctx3 = canvas3.getContext('2d');
+
+    const wVec = { x: -1.0, y: 1.0 };
+    const bias = 0.0;
+    let testPoint = { x: -1.4, y: 1.8 };
+
+    const refCats = [
+      { x: -1.8, y: 2.1 }, { x: -2.2, y: 1.2 }, { x: -1.1, y: 2.3 },
+      { x: -1.9, y: 0.7 }, { x: -0.8, y: 1.6 }
+    ];
+    const refDogs = [
+      { x: 1.7, y: -1.9 }, { x: 2.1, y: -0.9 }, { x: 0.9, y: -2.2 },
+      { x: 1.8, y: -0.5 }, { x: 1.1, y: -1.3 }
+    ];
+
+    function updateTelemetry() {
+      const dot = wVec.x * testPoint.x + wVec.y * testPoint.y + bias;
+      const magW = Math.hypot(wVec.x, wVec.y);
+      const magX = Math.hypot(testPoint.x, testPoint.y);
+      const cosTheta = magX > 0.001 ? (wVec.x * testPoint.x + wVec.y * testPoint.y) / (magW * magX) : 0;
+      const angleDeg = Math.acos(Math.max(-1, Math.min(1, cosTheta))) * (180 / Math.PI);
+
+      document.getElementById('telemetryVec').textContent = `[${testPoint.x.toFixed(2)}, ${testPoint.y.toFixed(2)}]`;
+      document.getElementById('telemetryAngle').textContent = `${angleDeg.toFixed(1)}° (cos θ = ${cosTheta.toFixed(2)})`;
+
+      const resEl = document.getElementById('telemetryResult');
+      const sign = dot >= 0 ? '+' : '';
+      if (Math.abs(dot) < 0.15) {
+        resEl.textContent = `${sign}${dot.toFixed(2)} → EN FRONTERA`;
+        resEl.className = 'px-3 py-1 rounded font-extrabold bg-white text-[#041036]';
+      } else if (dot > 0) {
+        resEl.textContent = `${sign}${dot.toFixed(2)} → GATO (> 0)`;
+        resEl.className = 'px-3 py-1 rounded font-extrabold bg-[#00D2FF] text-[#041036]';
+      } else {
+        resEl.textContent = `${sign}${dot.toFixed(2)} → PERRO (< 0)`;
+        resEl.className = 'px-3 py-1 rounded font-extrabold bg-[#FDE047] text-[#041036]';
+      }
+    }
+
+    canvas3.addEventListener('click', (e) => {
+      const rect = canvas3.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      const normX = ((px / rect.width) - 0.5) * 6;
+      const normY = (0.5 - (py / rect.height)) * 6;
+      testPoint = { x: normX, y: normY };
+      updateTelemetry();
+    });
+
+    document.getElementById('btnTestCat').addEventListener('click', () => {
+      testPoint = { x: -1.6 + (Math.random() - 0.5) * 0.5, y: 1.7 + (Math.random() - 0.5) * 0.5 };
+      updateTelemetry();
+    });
+
+    document.getElementById('btnTestDog').addEventListener('click', () => {
+      testPoint = { x: 1.6 + (Math.random() - 0.5) * 0.5, y: -1.6 + (Math.random() - 0.5) * 0.5 };
+      updateTelemetry();
+    });
+
+    document.getElementById('btnTestBorder').addEventListener('click', () => {
+      testPoint = { x: 1.2, y: 1.2 };
+      updateTelemetry();
+    });
+
+    function toCanvas3Coords(nx, ny, w, h) {
+      return {
+        x: (nx / 6 + 0.5) * w,
+        y: (0.5 - ny / 6) * h
+      };
+    }
+
+    function drawArrow(ctx, fromX, fromY, toX, toY, color, width = 3.5) {
+      const headlen = 12;
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+      const angle = Math.atan2(dy, dx);
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawSlide3() {
+      const w = canvas3.width;
+      const h = canvas3.height;
+      ctx3.clearRect(0, 0, w, h);
+
+      const origin = toCanvas3Coords(0, 0, w, h);
+      const pTopRight = toCanvas3Coords(3, 3, w, h);
+      const pBotLeft = toCanvas3Coords(-3, -3, w, h);
+
+      // Semiespacio Gato
+      ctx3.fillStyle = 'rgba(56, 189, 248, 0.14)';
+      ctx3.beginPath();
+      ctx3.moveTo(0, 0);
+      ctx3.lineTo(pTopRight.x, pTopRight.y);
+      ctx3.lineTo(pBotLeft.x, pBotLeft.y);
+      ctx3.lineTo(0, h);
+      ctx3.closePath();
+      ctx3.fill();
+
+      // Semiespacio Perro
+      ctx3.fillStyle = 'rgba(253, 224, 71, 0.12)';
+      ctx3.beginPath();
+      ctx3.moveTo(w, 0);
+      ctx3.lineTo(pTopRight.x, pTopRight.y);
+      ctx3.lineTo(pBotLeft.x, pBotLeft.y);
+      ctx3.lineTo(w, h);
+      ctx3.closePath();
+      ctx3.fill();
+
+      // Ejes blancos
+      ctx3.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx3.lineWidth = 1.5;
+      ctx3.beginPath();
+      ctx3.moveTo(0, origin.y);
+      ctx3.lineTo(w, origin.y);
+      ctx3.moveTo(origin.x, 0);
+      ctx3.lineTo(origin.x, h);
+      ctx3.stroke();
+
+      // Línea Hiperplano w·x + b = 0
+      ctx3.save();
+      ctx3.strokeStyle = '#5CE1E6';
+      ctx3.lineWidth = 3.5;
+      ctx3.setLineDash([9, 6]);
+      ctx3.beginPath();
+      ctx3.moveTo(pBotLeft.x, pBotLeft.y);
+      ctx3.lineTo(pTopRight.x, pTopRight.y);
+      ctx3.stroke();
+      ctx3.restore();
+
+      // Etiquetas de regiones con altísimo contraste
+      ctx3.font = '700 14px Oswald, sans-serif';
+      ctx3.fillStyle = '#5CE1E6';
+      ctx3.textAlign = 'left';
+      ctx3.fillText('SEMIESPACIO GATO (w·x + b > 0)', 16, 28);
+
+      ctx3.fillStyle = '#FDE047';
+      ctx3.textAlign = 'right';
+      ctx3.fillText('SEMIESPACIO PERRO (w·x + b < 0)', w - 16, h - 16);
+
+      refCats.forEach(c => {
+        const pt = toCanvas3Coords(c.x, c.y, w, h);
+        ctx3.fillStyle = '#38BDF8';
+        ctx3.beginPath();
+        ctx3.arc(pt.x, pt.y, 6.5, 0, Math.PI * 2);
+        ctx3.fill();
+        ctx3.strokeStyle = '#FFFFFF';
+        ctx3.lineWidth = 1;
+        ctx3.stroke();
+      });
+
+      refDogs.forEach(d => {
+        const pt = toCanvas3Coords(d.x, d.y, w, h);
+        ctx3.fillStyle = '#FDE047';
+        ctx3.beginPath();
+        ctx3.arc(pt.x, pt.y, 6.5, 0, Math.PI * 2);
+        ctx3.fill();
+        ctx3.strokeStyle = '#FFFFFF';
+        ctx3.lineWidth = 1;
+        ctx3.stroke();
+      });
+
+      // Vector Normal w
+      const wEnd = toCanvas3Coords(wVec.x * 1.15, wVec.y * 1.15, w, h);
+      drawArrow(ctx3, origin.x, origin.y, wEnd.x, wEnd.y, '#FFFFFF', 3.5);
+      ctx3.fillStyle = '#FFFFFF';
+      ctx3.font = '700 14px JetBrains Mono, monospace';
+      ctx3.textAlign = 'right';
+      ctx3.fillText('w (normal)', wEnd.x - 8, wEnd.y - 10);
+
+      // Vector evaluado x
+      const xEnd = toCanvas3Coords(testPoint.x, testPoint.y, w, h);
+      const dot = wVec.x * testPoint.x + wVec.y * testPoint.y;
+      const vecColor = dot >= 0 ? '#00D2FF' : '#FDE047';
+      drawArrow(ctx3, origin.x, origin.y, xEnd.x, xEnd.y, vecColor, 4);
+
+      ctx3.fillStyle = vecColor;
+      ctx3.beginPath();
+      ctx3.arc(xEnd.x, xEnd.y, 8.5, 0, Math.PI * 2);
+      ctx3.fill();
+      ctx3.strokeStyle = '#FFFFFF';
+      ctx3.lineWidth = 2.5;
+      ctx3.stroke();
+
+      ctx3.fillStyle = '#FFFFFF';
+      ctx3.font = '700 15px JetBrains Mono, monospace';
+      ctx3.textAlign = 'left';
+      ctx3.fillText('x', xEnd.x + 12, xEnd.y - 8);
+    }
+
+    updateTelemetry();
+
+    // =========================================================================
+    // 5. DIAPOSITIVA 4: SIMULACIÓN DEL PIPELINE COMPLETO
+    // =========================================================================
+    let simTimer = null;
+    let simSelectedClass = 'cat';
+
+    document.getElementById('btnSimInputCat').addEventListener('click', (e) => {
+      simSelectedClass = 'cat';
+      e.currentTarget.classList.add('selected');
+      document.getElementById('btnSimInputDog').classList.remove('selected');
+      document.getElementById('pipeCalc0').textContent = 'x = [0.9, 0.1, ..., 0.8]ᵀ';
+    });
+
+    document.getElementById('btnSimInputDog').addEventListener('click', (e) => {
+      simSelectedClass = 'dog';
+      e.currentTarget.classList.add('selected');
+      document.getElementById('btnSimInputCat').classList.remove('selected');
+      document.getElementById('pipeCalc0').textContent = 'x = [0.3, 0.8, ..., 0.4]ᵀ';
+    });
+
+    function runPipelineSimulation() {
+      if (simTimer) clearInterval(simTimer);
+
+      const cards = [0, 1, 2, 3].map(i => document.getElementById(`pipe-step-${i}`));
+      const c1 = document.getElementById('pipeCalc1');
+      const c2 = document.getElementById('pipeCalc2');
+      const badge = document.getElementById('pipeOutputBadge');
+
+      cards.forEach(c => c.classList.remove('step-active'));
+      c1.textContent = 'Calculando W · x ...';
+      c2.textContent = 'Esperando z ...';
+      badge.textContent = 'Procesando...';
+      badge.className = 'font-mono-code text-xs font-extrabold bg-[#040F30] text-[#5CE1E6] border border-[#38BDF8]/50 px-2.5 py-1.5 rounded';
+
+      let step = 0;
+      cards[0].classList.add('step-active');
+
+      simTimer = setInterval(() => {
+        cards[step].classList.remove('step-active');
+        step++;
+
+        if (step === 1) {
+          cards[1].classList.add('step-active');
+          c1.textContent = simSelectedClass === 'cat' ? 'z = [-1.45, 1.82]ᵀ' : 'z = [1.60, -1.55]ᵀ';
+        } else if (step === 2) {
+          cards[2].classList.add('step-active');
+          c2.textContent = simSelectedClass === 'cat' ? 'w·z + b = +3.27 (> 0)' : 'w·z + b = -3.15 (< 0)';
+        } else if (step === 3) {
+          cards[3].classList.add('step-active');
+          if (simSelectedClass === 'cat') {
+            badge.textContent = 'VEREDICTO: GATO (96%)';
+            badge.className = 'font-mono-code text-xs font-extrabold bg-[#00D2FF] text-[#041036] px-2.5 py-1.5 rounded';
+          } else {
+            badge.textContent = 'VEREDICTO: PERRO (94%)';
+            badge.className = 'font-mono-code text-xs font-extrabold bg-[#FDE047] text-[#041036] px-2.5 py-1.5 rounded';
+          }
+        } else {
+          clearInterval(simTimer);
+        }
+      }, 650);
+    }
+
+    document.getElementById('btnRunSimulation').addEventListener('click', runPipelineSimulation);
+
+    // =========================================================================
+    // 6. REDIMENSIONAMIENTO RESPONSIVO Y BUCLE DE ANIMACIÓN
+    // =========================================================================
+    function resizeCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+      }
+    }
+
+    function resizeAllCanvases() {
+      resizeCanvas(canvas1);
+      resizeCanvas(canvas2);
+      resizeCanvas(canvas3);
+    }
+
+    window.addEventListener('resize', resizeAllCanvases);
+
+    function animateLoop() {
+      if (currentSlide === 0) drawSlide1();
+      else if (currentSlide === 1) drawSlide2();
+      else if (currentSlide === 2) drawSlide3();
+      requestAnimationFrame(animateLoop);
+    }
+
+    window.onload = function () {
+      resizeAllCanvases();
+      animateLoop();
+    };
+  </script>
+</body>
+</html>
